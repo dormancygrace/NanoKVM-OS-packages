@@ -39,6 +39,11 @@ The publish workflow also downloads a hash-checked Buildroot source archive and
 builds its own `riscv64`/musl toolchain with
 `scripts/build-riscv-toolchain.sh`; it never expects a machine-local compiler
 or installs a prebuilt target SDK.
+The workflow has two process boundaries.
+`scripts/build-package-staging.sh` validates versions with native apk-tools and compiles recipes into a
+hash-recorded unsigned staging artifact with no signing key in its
+environment. `scripts/sign-repository.sh` validates that artifact against the checked-out recipe metadata, signs
+each package and the `riscv64/Packages.adb` index, and never runs a recipe build hook.
 `scripts/build-repository.sh` requires the resulting `apk` executable, an
 explicit exact target ABI, the RISC-V target compiler for each recipe and the
 existing production signing key path. It writes a fresh `repository/` tree,
