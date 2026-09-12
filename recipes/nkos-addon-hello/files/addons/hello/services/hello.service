@@ -1,0 +1,4 @@
+name=hello
+command=/opt/nkos/addons/hello/bin/hello --daemon
+default_enabled=false
+restart=on-update

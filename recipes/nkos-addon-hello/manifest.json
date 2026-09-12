@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "id": "hello",
+  "package": "nkos-addon-hello",
+  "source_version": "1.0.0",
+  "pkgver": "1.0.0",
+  "pkgrel": 0,
+  "arch": "riscv64",
+  "description": "Small static NanoKVM addon lifecycle fixture",
+  "license": "MIT",
+  "maintainer": "NanoKVM OS maintainers",
+  "base_abi_provider": "nkos-base-abi",
+  "server_api": "nkos-server-api=1",
+  "features": ["nkos-feature-shell=1", "nkos-feature-static-riscv64=1"],
+  "config": "/etc/kvm/hello",
+  "data": "/data/hello",
+  "payload_files": ["addons/hello/addon.json", "addons/hello/bin/hello", "addons/hello/services/hello.service"],
+  "generated_files": ["addons/hello/addon.json", "addons/hello/bin/hello"],
+  "services": [
+    {
+      "name": "hello",
+      "command": "/opt/nkos/addons/hello/bin/hello --daemon",
+      "default_enabled": false,
+      "restart": "on-update"
+    }
+  ],
+  "preserve": ["config", "data"]
+}

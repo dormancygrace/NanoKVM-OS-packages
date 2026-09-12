@@ -1,0 +1,146 @@
+name: NanoKVM optional packages
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Build and publish a signed package repository snapshot
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  host-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Load immutable ABI contract input
+        run: |
+          . ./versions.env
+          printf '%s\n' "$BASE_ABI_VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'
+      - name: Install host build tools
+        run: sudo apt-get update && sudo apt-get install --yes meson ninja-build libssl-dev zlib1g-dev libzstd-dev
+      - name: Fetch pinned apk-tools source
+        run: |
+          . ./versions.env
+          curl --fail --location --retry 3 \
+            "https://gitlab.alpinelinux.org/alpine/apk-tools/-/archive/$APK_TOOLS_TAG/$APK_TOOLS_SOURCE" \
+            --output "$RUNNER_TEMP/$APK_TOOLS_SOURCE"
+      - name: Build pinned apk-tools and run host self-test
+        run: |
+          . ./versions.env
+          scripts/build-apk-tools.sh --source-tar "$RUNNER_TEMP/$APK_TOOLS_SOURCE" --out "$RUNNER_TEMP/apk"
+          scripts/host-self-test.sh --apk "$RUNNER_TEMP/apk"
+      - name: Validate every recipe
+        run: |
+          . ./versions.env
+          scripts/validate-repository.py --base-abi "nkos-base-abi=$BASE_ABI_VERSION"
+
+  target-build:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish == true && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+    needs: host-gate
+    runs-on: ubuntu-latest
+    environment: package-publishing
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Load immutable ABI contract input
+        run: |
+          . ./versions.env
+          printf '%s\n' "$BASE_ABI_VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'
+      - name: Build the pinned host apk generator
+        run: |
+          . ./versions.env
+          sudo apt-get update && sudo apt-get install --yes meson ninja-build libssl-dev zlib1g-dev libzstd-dev
+          curl --fail --location --retry 3 \
+            "https://gitlab.alpinelinux.org/alpine/apk-tools/-/archive/$APK_TOOLS_TAG/$APK_TOOLS_SOURCE" \
+            --output "$RUNNER_TEMP/$APK_TOOLS_SOURCE"
+          scripts/build-apk-tools.sh --source-tar "$RUNNER_TEMP/$APK_TOOLS_SOURCE" --out "$RUNNER_TEMP/apk"
+      - name: Build the pinned Buildroot riscv64/musl toolchain
+        run: |
+          . ./versions.env
+          sudo apt-get install --yes bc bison build-essential cpio file flex libncurses-dev patch python3 rsync unzip wget xz-utils
+          curl --fail --location --retry 3 \
+            "https://buildroot.org/downloads/$BUILDROOT_SOURCE" \
+            --output "$RUNNER_TEMP/$BUILDROOT_SOURCE"
+          scripts/build-riscv-toolchain.sh --source-tar "$RUNNER_TEMP/$BUILDROOT_SOURCE" \
+            --out "$RUNNER_TEMP/br-toolchain"
+          printf 'NKOS_TARGET_CC=%s\n' "$RUNNER_TEMP/br-toolchain/host/bin/riscv64-buildroot-linux-musl-gcc" >> "$GITHUB_ENV"
+      - name: Fetch previous Pages repository for immutability check
+        run: |
+          . ./versions.env
+          previous="$RUNNER_TEMP/previous-repository"
+          mkdir -p "$previous"
+          if curl --fail --location --retry 2 "$PACKAGE_PAGES_URL/manifest.json" \
+            --output "$previous/manifest.json"; then
+                python3 - "$previous/manifest.json" "$previous" "$PACKAGE_PAGES_URL" <<'PY'
+          import json
+          import pathlib
+          import sys
+          import urllib.request
+
+          manifest_path = pathlib.Path(sys.argv[1])
+          root = pathlib.Path(sys.argv[2]).resolve()
+          base_url = sys.argv[3].rstrip("/")
+          manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+          for record in manifest.get("packages", []):
+              relative = record.get("path")
+              if not isinstance(relative, str) or not relative.startswith("riscv64/") or ".." in pathlib.PurePosixPath(relative).parts:
+                  raise SystemExit(f"unsafe previous package path: {relative!r}")
+              destination = (root / relative).resolve()
+              if root not in destination.parents:
+                  raise SystemExit(f"previous package escaped snapshot: {relative!r}")
+              destination.parent.mkdir(parents=True, exist_ok=True)
+              urllib.request.urlretrieve(f"{base_url}/{relative}", destination)
+          PY
+            printf 'NKOS_PREVIOUS_REPOSITORY=%s\n' "$previous" >> "$GITHUB_ENV"
+          else
+            rm -rf "$previous"
+          fi
+      - name: Build signed target repository
+        env:
+          APK_SIGNING_KEY: ${{ secrets.APK_SIGNING_KEY }}
+          REPOSITORY_COMMIT: ${{ github.sha }}
+        run: |
+          . ./versions.env
+          test -n "$APK_SIGNING_KEY" || { echo 'APK_SIGNING_KEY is required for publish.' >&2; exit 2; }
+          umask 077
+          printf '%s\n' "$APK_SIGNING_KEY" > "$RUNNER_TEMP/nkos-signing-key.pem"
+          trap 'rm -f "$RUNNER_TEMP/nkos-signing-key.pem"' EXIT
+          previous_args=
+          if [ -n "${NKOS_PREVIOUS_REPOSITORY:-}" ]; then
+            previous_args="--previous $NKOS_PREVIOUS_REPOSITORY"
+          fi
+          scripts/build-repository.sh --apk "$RUNNER_TEMP/apk" --base-abi "nkos-base-abi=$BASE_ABI_VERSION" \
+            --sign-key "$RUNNER_TEMP/nkos-signing-key.pem" --out repository $previous_args
+      - name: Prepare Pages artifact
+        run: |
+          mkdir -p "$RUNNER_TEMP/pages/repository"
+          cp -a repository/. "$RUNNER_TEMP/pages/repository/"
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ${{ runner.temp }}/pages
+
+  deploy-pages:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish == true && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+    needs: target-build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      pages: write
+      id-token: write
+    steps:
+      - name: Publish repository snapshot to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
