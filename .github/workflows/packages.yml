@@ -33,8 +33,9 @@ jobs:
       - name: Fetch pinned apk-tools source
         run: |
           . ./versions.env
-          curl --fail --location --retry 3 \
-            "https://gitlab.alpinelinux.org/alpine/apk-tools/-/archive/$APK_TOOLS_TAG/$APK_TOOLS_SOURCE" \
+          curl --fail --location --retry 3 --retry-all-errors \
+            --user-agent "NanoKVM-OS-package-ci/${APK_TOOLS_VERSION}" \
+            "https://gitlab.alpinelinux.org/alpine/apk-tools/-/archive/$APK_TOOLS_TAG/$APK_TOOLS_SOURCE?download=1" \
             --output "$RUNNER_TEMP/$APK_TOOLS_SOURCE"
       - name: Build pinned apk-tools and run host self-test
         run: |
@@ -64,8 +65,9 @@ jobs:
         run: |
           . ./versions.env
           sudo apt-get update && sudo apt-get install --yes meson ninja-build libssl-dev zlib1g-dev libzstd-dev
-          curl --fail --location --retry 3 \
-            "https://gitlab.alpinelinux.org/alpine/apk-tools/-/archive/$APK_TOOLS_TAG/$APK_TOOLS_SOURCE" \
+          curl --fail --location --retry 3 --retry-all-errors \
+            --user-agent "NanoKVM-OS-package-ci/${APK_TOOLS_VERSION}" \
+            "https://gitlab.alpinelinux.org/alpine/apk-tools/-/archive/$APK_TOOLS_TAG/$APK_TOOLS_SOURCE?download=1" \
             --output "$RUNNER_TEMP/$APK_TOOLS_SOURCE"
           scripts/build-apk-tools.sh --source-tar "$RUNNER_TEMP/$APK_TOOLS_SOURCE" --out "$RUNNER_TEMP/apk"
       - name: Build the pinned Buildroot riscv64/musl toolchain
