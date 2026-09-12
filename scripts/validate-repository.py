@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Validate NanoKVM addon recipes before apk package generation.
 
-This validator intentionally uses only the Python standard library so it can
-run in a clean CI job before apk-tools is built.  It checks the package-owned
-namespace, declarative service syntax and exact capability contract.  APK
-archive signatures and dependency resolution are checked by the build/self
-test scripts after this pass.
+This validator uses only the Python standard library around one supplied
+native apk-tools executable.  It checks the package-owned namespace,
+declarative service syntax and exact capability contract, then asks apk-tools
+to validate every complete package version.  Archive signatures and
+dependency resolution are checked by the build/self-test scripts after this
+pass.
 """
 from __future__ import annotations
 
@@ -50,7 +51,7 @@ def string_field(manifest: dict, key: str) -> str:
     return value
 
 
-def validate_recipe(recipe: Path, base_abi: str | None) -> dict:
+def validate_recipe(recipe: Path, base_abi: str | None, apk: Path) -> dict:
     manifest_path = recipe / "manifest.json"
     if not manifest_path.is_file() or manifest_path.is_symlink():
         fail(f"missing manifest: {manifest_path}")
@@ -68,7 +69,7 @@ def validate_recipe(recipe: Path, base_abi: str | None) -> dict:
     if any(ord(char) < 0x20 or ord(char) == 0x7F for char in source_version):
         fail(f"{package}: source_version contains a control character")
     try:
-        version = canonical_version(manifest)
+        version = canonical_version(manifest, apk)
     except ValueError as exc:
         fail(f"{package}: {exc}")
     if not ID_RE.fullmatch(recipe_id):
@@ -194,7 +195,12 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--base-abi")
+    parser.add_argument("--apk", type=Path, required=True,
+                        help="native apk-tools executable for authoritative version validation")
     args = parser.parse_args()
+    if not args.apk.is_file() or not args.apk.stat().st_mode & 0o111:
+        print(f"validate-repository: executable --apk is required: {args.apk}", file=sys.stderr)
+        return 2
     recipes = sorted(path for path in (args.root / "recipes").iterdir() if path.is_dir())
     if not recipes:
         print("validate-repository: no recipes found", file=sys.stderr)
@@ -202,7 +208,7 @@ def main() -> int:
     seen: set[tuple[str, str]] = set()
     try:
         for recipe in recipes:
-            descriptor = validate_recipe(recipe, args.base_abi)
+            descriptor = validate_recipe(recipe, args.base_abi, args.apk)
             key = (descriptor["package"], descriptor["version"])
             if key in seen:
                 fail(f"duplicate package/version: {key[0]} {key[1]}")

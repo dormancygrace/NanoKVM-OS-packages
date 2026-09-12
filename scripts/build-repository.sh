@@ -68,7 +68,10 @@ case $SOURCE_DATE_EPOCH in ''|*[!0-9]*)
 esac
 export SOURCE_DATE_EPOCH
 
-python3 "$here/validate-repository.py" --root "$repo" --base-abi "$base_abi"
+# Recipe builds run without any ambient signing-key variables.
+unset APK_SIGNING_KEY NKOS_SIGNING_KEY SIGNING_KEY
+
+python3 "$here/validate-repository.py" --root "$repo" --base-abi "$base_abi" --apk "$apk"
 tmp=$(mktemp -d "${TMPDIR:-/tmp}/nkos-repository.XXXXXX")
 trap 'rm -rf "$tmp"' EXIT HUP INT TERM
 mkdir -p "$tmp/repository/riscv64"
@@ -116,12 +119,12 @@ for recipe in "$repo"/recipes/*; do
 	manifest=$recipe/manifest.json
 	id=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["id"])' "$manifest")
 	package=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["package"])' "$manifest")
-	version=$(python3 "$here/package_version.py" "$manifest")
+	version=$(python3 "$here/package_version.py" "$manifest" --apk "$apk")
 	stage=$tmp/stage-$id
 	mkdir -p "$stage"
 	cp -a "$recipe/files/." "$stage/"
 	sh "$recipe/build.sh" "$stage"
-	python3 "$here/render-addon.py" "$manifest" "$base_abi" "$stage/addons/$id/addon.json"
+	python3 "$here/render-addon.py" "$manifest" "$base_abi" "$stage/addons/$id/addon.json" --apk "$apk"
 	python3 - "$stage" "$id" "$manifest" <<'PY'
 import json
 import os
@@ -192,7 +195,7 @@ set -- "$tmp/repository/riscv64/"*.apk
 index=$tmp/repository/riscv64/Packages.adb
 "$apk" --keys-dir "$verify_keys_dir" --sign-key "$sign_key" mkndx \
 	--output "$index" --description "NanoKVM OS packages $repository_commit" \
-	--pkgname-spec '${arch}/${name}-${version}.apk' "$@"
+	--pkgname-spec '${name}-${version}.apk' "$@"
 "$apk" --keys-dir "$verify_keys_dir" verify "$index"
 
 python3 - "$tmp/repository" "$repo" "$base_abi" "$repository_commit" "$previous" <<'PY'

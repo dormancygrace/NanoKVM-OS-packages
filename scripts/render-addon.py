@@ -14,10 +14,12 @@ def main() -> int:
     parser.add_argument("manifest", type=Path)
     parser.add_argument("base_abi")
     parser.add_argument("output", type=Path)
+    parser.add_argument("--apk", required=True, type=Path,
+                        help="native apk-tools executable for authoritative version validation")
     args = parser.parse_args()
 
     manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
-    version = canonical_version(manifest)
+    version = canonical_version(manifest, args.apk)
     descriptor = {
         "schema": 1,
         "id": manifest["id"],

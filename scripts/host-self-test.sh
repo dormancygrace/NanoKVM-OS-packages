@@ -42,7 +42,7 @@ chmod 0755 "$tmp/payload/addons/demo/bin/demo"
 "$apk" --keys-dir "$tmp/keys" verify "$tmp/repository/riscv64/nkos-addon-demo-1.0.0-r0.apk"
 "$apk" --keys-dir "$tmp/keys" --sign-key "$tmp/signing.pem" mkndx \
 	--output "$tmp/repository/riscv64/Packages.adb" \
-	--pkgname-spec '${arch}/${name}-${version}.apk' \
+	--pkgname-spec '${name}-${version}.apk' \
 	"$tmp/repository/riscv64/nkos-addon-demo-1.0.0-r0.apk"
 "$apk" --keys-dir "$tmp/keys" verify "$tmp/repository/riscv64/Packages.adb"
 
@@ -130,7 +130,7 @@ cp "$repo/recipes/nkos-addon-hello/manifest.json" "$bad/recipes/nkos-addon-bad/m
 sed -i 's/"id": "hello"/"id": "bad"/; s/nkos-addon-hello/nkos-addon-bad/g; s#addons/hello#addons/bad#g; s#/hello#/bad#g' "$bad/recipes/nkos-addon-bad/manifest.json"
 printf '%s\n' evil > "$bad/recipes/nkos-addon-bad/files/etc-escape"
 cp "$repo/recipes/nkos-addon-hello/build.sh" "$bad/recipes/nkos-addon-bad/build.sh"
-if python3 "$repo/scripts/validate-repository.py" --root "$bad" --base-abi nkos-base-abi=1.0.0 >/dev/null 2>&1; then
+if python3 "$repo/scripts/validate-repository.py" --root "$bad" --base-abi nkos-base-abi=1.0.0 --apk "$apk" >/dev/null 2>&1; then
 	echo 'host-self-test: validator accepted an unsafe fixture' >&2
 	exit 1
 fi
