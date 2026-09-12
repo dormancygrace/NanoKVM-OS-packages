@@ -50,6 +50,8 @@ jobs:
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish == true && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
     needs: host-gate
     runs-on: ubuntu-latest
+    outputs:
+      package_input_sha256: ${{ steps.package_input_digest.outputs.package_input_sha256 }}
     permissions:
       contents: read
     steps:
@@ -90,6 +92,12 @@ jobs:
           cp "$RUNNER_TEMP/apk" "$RUNNER_TEMP/package-input/apk"
           cp -a "$RUNNER_TEMP/nkos-package-staging" "$RUNNER_TEMP/package-input/staging"
           tar -C "$RUNNER_TEMP/package-input" -czf "$RUNNER_TEMP/nkos-package-input.tar.gz" apk staging
+      - name: Record unsigned package input digest
+        id: package_input_digest
+        run: |
+          digest=$(sha256sum "$RUNNER_TEMP/nkos-package-input.tar.gz" | awk '{print $1}')
+          printf 'package_input_sha256=%s\n' "$digest" >> "$GITHUB_OUTPUT"
+          printf 'Unsigned package input SHA-256: %s\n' "$digest"
       - name: Upload unsigned package input
         uses: actions/upload-artifact@v4
         with:
@@ -113,6 +121,17 @@ jobs:
         with:
           name: nkos-package-input-${{ github.sha }}
           path: ${{ runner.temp }}/package-input
+      - name: Verify unsigned package input digest
+        env:
+          EXPECTED_PACKAGE_INPUT_SHA256: ${{ needs.target-build.outputs.package_input_sha256 }}
+        run: |
+          printf '%s\n' "$EXPECTED_PACKAGE_INPUT_SHA256" | grep -Eq '^[0-9a-fA-F]{64}$'
+          actual=$(sha256sum "$RUNNER_TEMP/package-input/nkos-package-input.tar.gz" | awk '{print $1}')
+          test "$actual" = "$EXPECTED_PACKAGE_INPUT_SHA256" || {
+            echo "unsigned package input digest mismatch" >&2
+            exit 1
+          }
+          printf 'Verified unsigned package input SHA-256: %s\n' "$actual"
       - name: Extract unsigned package input
         run: |
           mkdir -p "$RUNNER_TEMP/package-input/extracted"
