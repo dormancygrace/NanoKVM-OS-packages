@@ -33,10 +33,19 @@ jobs:
       - name: Fetch pinned apk-tools source
         run: |
           . ./versions.env
-          curl --fail --location --retry 3 --retry-all-errors \
-            --user-agent "NanoKVM-OS-package-ci/${APK_TOOLS_VERSION}" \
-            "https://gitlab.alpinelinux.org/alpine/apk-tools/-/archive/$APK_TOOLS_TAG/$APK_TOOLS_SOURCE?download=1" \
-            --output "$RUNNER_TEMP/$APK_TOOLS_SOURCE"
+          source_dir="$RUNNER_TEMP/apk-tools-source"
+          if ! git clone --quiet --depth 1 --branch "$APK_TOOLS_TAG" \
+            https://gitlab.alpinelinux.org/alpine/apk-tools.git "$source_dir"; then
+            rm -rf "$source_dir"
+            git clone --quiet --depth 1 --branch "$APK_TOOLS_TAG" \
+              https://github.com/alpinelinux/apk-tools.git "$source_dir"
+          fi
+          test "$(git -C "$source_dir" rev-parse HEAD)" = "$APK_TOOLS_COMMIT"
+          git -C "$source_dir" archive --format=tar \
+            --prefix="apk-tools-v${APK_TOOLS_VERSION}/" HEAD \
+            | bzip2 -c > "$RUNNER_TEMP/$APK_TOOLS_SOURCE"
+          actual=$(sha256sum "$RUNNER_TEMP/$APK_TOOLS_SOURCE" | cut -d ' ' -f1)
+          test "$actual" = "$APK_TOOLS_SOURCE_SHA256"
       - name: Build pinned apk-tools and run host self-test
         run: |
           . ./versions.env
@@ -65,10 +74,19 @@ jobs:
         run: |
           . ./versions.env
           sudo apt-get update && sudo apt-get install --yes meson ninja-build libssl-dev zlib1g-dev libzstd-dev
-          curl --fail --location --retry 3 --retry-all-errors \
-            --user-agent "NanoKVM-OS-package-ci/${APK_TOOLS_VERSION}" \
-            "https://gitlab.alpinelinux.org/alpine/apk-tools/-/archive/$APK_TOOLS_TAG/$APK_TOOLS_SOURCE?download=1" \
-            --output "$RUNNER_TEMP/$APK_TOOLS_SOURCE"
+          source_dir="$RUNNER_TEMP/apk-tools-source"
+          if ! git clone --quiet --depth 1 --branch "$APK_TOOLS_TAG" \
+            https://gitlab.alpinelinux.org/alpine/apk-tools.git "$source_dir"; then
+            rm -rf "$source_dir"
+            git clone --quiet --depth 1 --branch "$APK_TOOLS_TAG" \
+              https://github.com/alpinelinux/apk-tools.git "$source_dir"
+          fi
+          test "$(git -C "$source_dir" rev-parse HEAD)" = "$APK_TOOLS_COMMIT"
+          git -C "$source_dir" archive --format=tar \
+            --prefix="apk-tools-v${APK_TOOLS_VERSION}/" HEAD \
+            | bzip2 -c > "$RUNNER_TEMP/$APK_TOOLS_SOURCE"
+          actual=$(sha256sum "$RUNNER_TEMP/$APK_TOOLS_SOURCE" | cut -d ' ' -f1)
+          test "$actual" = "$APK_TOOLS_SOURCE_SHA256"
           scripts/build-apk-tools.sh --source-tar "$RUNNER_TEMP/$APK_TOOLS_SOURCE" --out "$RUNNER_TEMP/apk"
       - name: Build the pinned Buildroot riscv64/musl toolchain
         run: |
