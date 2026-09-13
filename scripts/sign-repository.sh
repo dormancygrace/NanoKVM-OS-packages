@@ -170,7 +170,7 @@ for record in records:
         raise SystemExit(f"sign-repository: staged recipe manifest hash mismatch: {name}")
     if metadata.get("descriptor") != expected_descriptor or record.get("descriptor") != expected_descriptor:
         raise SystemExit(f"sign-repository: staged descriptor does not match source: {name}-{version}")
-    expected_depends = " ".join([base_abi, "nkos-server-api=1", *source_manifest["features"]])
+    expected_depends = " ".join([base_abi, "nkos-server-api=1", *source_manifest["features"], *source_manifest.get("depends", [])])
     for key, expected in {
         "description": source_manifest["description"],
         "license": source_manifest["license"],

@@ -98,6 +98,14 @@ jobs:
           scripts/build-riscv-toolchain.sh --source-tar "$RUNNER_TEMP/$BUILDROOT_SOURCE" \
             --out "$RUNNER_TEMP/br-toolchain"
           printf 'NKOS_TARGET_CC=%s\n' "$RUNNER_TEMP/br-toolchain/host/bin/riscv64-buildroot-linux-musl-gcc" >> "$GITHUB_ENV"
+      - name: Fetch pinned source-built optional userspace input
+        run: |
+          . ./versions.env
+          curl --fail --location --retry 3 "$OPTIONAL_INPUT_URL" --output "$RUNNER_TEMP/optional-input.tar.gz"
+          printf '%s  %s\n' "$OPTIONAL_INPUT_SHA256" "$RUNNER_TEMP/optional-input.tar.gz" | sha256sum --check
+          mkdir "$RUNNER_TEMP/optional-input"
+          tar -xzf "$RUNNER_TEMP/optional-input.tar.gz" -C "$RUNNER_TEMP/optional-input"
+          printf 'NKOS_OPTIONAL_INPUT=%s\n' "$RUNNER_TEMP/optional-input" >> "$GITHUB_ENV"
       - name: Build unsigned addon payload staging
         env:
           REPOSITORY_COMMIT: ${{ github.sha }}

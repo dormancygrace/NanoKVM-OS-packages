@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "id": "nano",
+  "package": "nkos-addon-nano",
+  "source_version": "9.2",
+  "pkgver": "9.2",
+  "pkgrel": 1,
+  "arch": "riscv64",
+  "description": "Nano text editor",
+  "license": "GPL-3.0+",
+  "base_abi_provider": "nkos-base-abi",
+  "server_api": "nkos-server-api=1",
+  "features": [
+    "nkos-feature-shell=1",
+    "nkos-feature-private-libs-riscv64=1"
+  ],
+  "config": "/etc/kvm/nano",
+  "data": "/data/nano",
+  "payload_files": [
+    "addons/nano/addon.json",
+    "addons/nano/build-provenance.json"
+  ],
+  "generated_files": [
+    "addons/nano/addon.json",
+    "addons/nano/build-provenance.json"
+  ],
+  "services": [],
+  "preserve": [
+    "config",
+    "data"
+  ]
+}

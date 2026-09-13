@@ -1,0 +1,39 @@
+{
+  "schema": 1,
+  "id": "bluez5-utils",
+  "package": "nkos-addon-bluez5-utils",
+  "source_version": "5.87",
+  "pkgver": "5.87",
+  "pkgrel": 1,
+  "arch": "riscv64",
+  "description": "Bluetooth utilities and optional daemon with private D-Bus",
+  "license": "GPL-2.0+, LGPL-2.1+",
+  "base_abi_provider": "nkos-base-abi",
+  "server_api": "nkos-server-api=1",
+  "features": [
+    "nkos-feature-shell=1",
+    "nkos-feature-private-libs-riscv64=1"
+  ],
+  "config": "/etc/kvm/bluez5-utils",
+  "data": "/data/bluez5-utils",
+  "payload_files": [
+    "addons/bluez5-utils/addon.json",
+    "addons/bluez5-utils/build-provenance.json"
+  ],
+  "generated_files": [
+    "addons/bluez5-utils/addon.json",
+    "addons/bluez5-utils/build-provenance.json"
+  ],
+  "services": [
+    {
+      "name": "bluetooth",
+      "command": "/opt/nkos/addons/bluez5-utils/bin/bluetooth-service",
+      "default_enabled": false,
+      "restart": "on-update"
+    }
+  ],
+  "preserve": [
+    "config",
+    "data"
+  ]
+}

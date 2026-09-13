@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "id": "mc",
+  "package": "nkos-addon-mc",
+  "source_version": "4.8.33",
+  "pkgver": "4.8.33",
+  "pkgrel": 1,
+  "arch": "riscv64",
+  "description": "Midnight Commander file manager",
+  "license": "GPL-3.0+",
+  "base_abi_provider": "nkos-base-abi",
+  "server_api": "nkos-server-api=1",
+  "features": [
+    "nkos-feature-shell=1",
+    "nkos-feature-private-libs-riscv64=1"
+  ],
+  "config": "/etc/kvm/mc",
+  "data": "/data/mc",
+  "payload_files": [
+    "addons/mc/addon.json",
+    "addons/mc/build-provenance.json"
+  ],
+  "generated_files": [
+    "addons/mc/addon.json",
+    "addons/mc/build-provenance.json"
+  ],
+  "services": [],
+  "preserve": [
+    "config",
+    "data"
+  ]
+}

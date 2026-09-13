@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "id": "tcpdump",
+  "package": "nkos-addon-tcpdump",
+  "source_version": "4.99.6",
+  "pkgver": "4.99.6",
+  "pkgrel": 1,
+  "arch": "riscv64",
+  "description": "Packet capture utility",
+  "license": "BSD-3-Clause",
+  "base_abi_provider": "nkos-base-abi",
+  "server_api": "nkos-server-api=1",
+  "features": [
+    "nkos-feature-shell=1",
+    "nkos-feature-private-libs-riscv64=1"
+  ],
+  "config": "/etc/kvm/tcpdump",
+  "data": "/data/tcpdump",
+  "payload_files": [
+    "addons/tcpdump/addon.json",
+    "addons/tcpdump/build-provenance.json"
+  ],
+  "generated_files": [
+    "addons/tcpdump/addon.json",
+    "addons/tcpdump/build-provenance.json"
+  ],
+  "services": [],
+  "preserve": [
+    "config",
+    "data"
+  ]
+}

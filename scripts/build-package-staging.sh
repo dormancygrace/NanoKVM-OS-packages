@@ -155,7 +155,7 @@ metadata = {
     "maintainer": manifest.get("maintainer", "NanoKVM OS maintainers"),
     "origin": package,
     "build_time": int(os.environ["SOURCE_DATE_EPOCH"]),
-    "depends": " ".join([base_abi, "nkos-server-api=1", *manifest["features"]]),
+    "depends": " ".join([base_abi, "nkos-server-api=1", *manifest["features"], *manifest.get("depends", [])]),
     "tags": "nkos-addon",
     "descriptor": descriptor,
     "recipe_manifest_sha256": hashlib.sha256((recipe / "manifest.json").read_bytes()).hexdigest(),
