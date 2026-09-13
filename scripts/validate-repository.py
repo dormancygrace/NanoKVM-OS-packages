@@ -96,6 +96,15 @@ def validate_recipe(recipe: Path, base_abi: str | None, apk: Path) -> dict:
     if base_abi is not None:
         if not BASE_RE.fullmatch(base_abi):
             fail(f"invalid exact base ABI: {base_abi}")
+    dependencies = manifest.get("depends", [])
+    if not isinstance(dependencies, list) or len(set(dependencies)) != len(dependencies):
+        fail(f"{package}: depends must be a unique list")
+    for dependency in dependencies:
+        if not isinstance(dependency, str) or not re.fullmatch(r"nkos-addon-[a-z0-9][a-z0-9+_.-]*[<>=]{1,2}[0-9][0-9A-Za-z._-]*-r[0-9]+", dependency):
+            fail(f"{package}: invalid addon dependency: {dependency!r}")
+        name = re.split(r"[<>=]", dependency)[0]
+        if name == package:
+            fail(f"{package}: self dependency")
     config = string_field(manifest, "config")
     data = string_field(manifest, "data")
     if config != f"/etc/kvm/{recipe_id}" or data != f"/data/{recipe_id}":

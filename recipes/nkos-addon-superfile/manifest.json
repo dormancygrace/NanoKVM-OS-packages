@@ -1,0 +1,35 @@
+{
+  "schema": 1,
+  "id": "superfile",
+  "package": "nkos-addon-superfile",
+  "source_version": "1.6.0",
+  "pkgver": "1.6.0",
+  "pkgrel": 1,
+  "arch": "riscv64",
+  "description": "Terminal file manager",
+  "license": "MIT",
+  "base_abi_provider": "nkos-base-abi",
+  "server_api": "nkos-server-api=1",
+  "features": [
+    "nkos-feature-shell=1",
+    "nkos-feature-private-libs-riscv64=1"
+  ],
+  "config": "/etc/kvm/superfile",
+  "data": "/data/superfile",
+  "payload_files": [
+    "addons/superfile/addon.json",
+    "addons/superfile/build-provenance.json"
+  ],
+  "generated_files": [
+    "addons/superfile/addon.json",
+    "addons/superfile/build-provenance.json"
+  ],
+  "services": [],
+  "preserve": [
+    "config",
+    "data"
+  ],
+  "depends": [
+    "nkos-addon-nano>=9.2-r1"
+  ]
+}

@@ -7,7 +7,7 @@ the versioned target contract; it consumes a pinned commit from this
 repository.
 
 Packages target the NanoKVM OS Buildroot `riscv64`/musl ABI. Alpine packages,
-host libraries, base libc, kernel/modules, updater files and system services
+host libraries, base libc, kernel/modules, updater files and base system services
 are outside this repository's ownership. Every addon package depends on an
 exact `nkos-base-abi=<version>`, `nkos-server-api=1` and its declared immutable
 feature providers. The resolver cannot substitute a repository-defined base
@@ -81,3 +81,45 @@ hash for an already published `(name, version, arch)` tuple and retain every
 APK still referenced by an index. Packaging fixes therefore increment the
 independent package revision (`upstream_version-rN`) and cannot silently
 replace an existing artifact.
+
+## Optional utilities (image sequence 18 and later)
+
+`mc`, `superfile`, `nano`, `htop`, `tcpdump`, `ethtool` and `bluez5-utils`
+are optional APKs with IDs of the same name and package names `nkos-addon-<id>`.
+Each starts at upstream version `-r1`. The recipe's independent `pkgrel` must
+increase for packaging fixes. `superfile` declares `nkos-addon-nano>=9.2-r1`:
+apk resolves and installs its default editor automatically.
+
+These packages require `nkos-feature-private-libs-riscv64=1`. The image supplies
+the RISC-V musl interpreter; other ELF libraries travel in the package's own
+`lib/` directory. Every ELF has a fixed package-local RUNPATH, and the runtime
+validates architecture, interpreter, library paths and the complete private
+dependency closure before committing. Libraries are bundled, not installed in
+`/usr/lib`; old static-only images reject the missing feature cleanly.
+
+The firmware build exports its optional source-built userspace with
+`python3 scripts/export-optional-packages.py --buildroot-output OUTPUT
+--mc-prefix MC_DESTDIR --out INPUT`. Build mc with its prefix set to
+`/opt/nkos/addons/mc/usr`, sysconfdir `/opt/nkos/addons/mc/etc`, and libexecdir
+`/opt/nkos/addons/mc/usr/libexec`. Preserve the firmware's compiler and `-O2`
+flags. The exporter copies resources, expands aliases, includes license texts,
+records each library owner, relocates ELF RUNPATH and hashes the payload.
+Set `NKOS_OPTIONAL_INPUT=INPUT` when running build-package-staging.sh.
+
+The release `optional-inputs-beta7-seq18` contains this hash-pinned binary input
+and corresponding upstream source archives, Buildroot configuration and patches.
+CI imports the exact input pinned in versions.env into unsigned staging before
+the separate secret-backed signer runs. Importing a built firmware component is
+an explicit build boundary; it is not a download of Alpine binaries. A future
+firmware/toolchain rebuild must export a new input, update its pin and increment
+the affected package revisions. The existing two static recipes still compile
+from source in package CI.
+
+After installation, new SSH/web terminal sessions add installed `bin/` directories
+to PATH. An existing shell can run `. /etc/profile`. Commands are also available
+through `nkos-addons run <id> -- /opt/nkos/addons/<id>/bin/<command>`.
+BlueZ's `bluetooth` service is disabled by default and runs its own D-Bus instance;
+its tools use that bus automatically. Bond keys and configuration stay in
+`/etc/kvm/bluez5-utils`, with Unix permissions on the root filesystem. No Bluetooth
+adapter is required to install the utilities. A real Bluetooth connection still
+requires compatible hardware.

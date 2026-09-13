@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "id": "htop",
+  "package": "nkos-addon-htop",
+  "source_version": "3.5.3",
+  "pkgver": "3.5.3",
+  "pkgrel": 1,
+  "arch": "riscv64",
+  "description": "Interactive process viewer",
+  "license": "GPL-2.0",
+  "base_abi_provider": "nkos-base-abi",
+  "server_api": "nkos-server-api=1",
+  "features": [
+    "nkos-feature-shell=1",
+    "nkos-feature-private-libs-riscv64=1"
+  ],
+  "config": "/etc/kvm/htop",
+  "data": "/data/htop",
+  "payload_files": [
+    "addons/htop/addon.json",
+    "addons/htop/build-provenance.json"
+  ],
+  "generated_files": [
+    "addons/htop/addon.json",
+    "addons/htop/build-provenance.json"
+  ],
+  "services": [],
+  "preserve": [
+    "config",
+    "data"
+  ]
+}
