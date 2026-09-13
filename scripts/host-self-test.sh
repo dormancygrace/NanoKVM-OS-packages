@@ -86,8 +86,8 @@ for provider in nkos-base-abi=1.0.0 nkos-server-api=1 nkos-feature-shell=1 nkos-
 	"$apk" --root "$http_root" --root-tmpfs=no --no-network $http_user_mode add \
 		--initdb --no-scripts --virtual "$provider"
 done
-"$apk" --root "$http_root" --root-tmpfs=no $http_user_mode update
-"$apk" --root "$http_root" --root-tmpfs=no $http_user_mode add \
+"$apk" --root "$http_root" --root-tmpfs=no update
+"$apk" --root "$http_root" --root-tmpfs=no add \
 	--no-scripts nkos-addon-demo=1.0.0-r0
 "$apk" --root "$http_root" --root-tmpfs=no --no-network info --installed nkos-addon-demo
 [ -x "$http_root/addons/demo/bin/demo" ]
