@@ -18,7 +18,8 @@
   "data": "/data/superfile",
   "payload_files": [
     "addons/superfile/addon.json",
-    "addons/superfile/build-provenance.json"
+    "addons/superfile/build-provenance.json",
+    "addons/superfile/README.txt"
   ],
   "generated_files": [
     "addons/superfile/addon.json",

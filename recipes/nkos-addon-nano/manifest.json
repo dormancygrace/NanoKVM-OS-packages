@@ -18,7 +18,8 @@
   "data": "/data/nano",
   "payload_files": [
     "addons/nano/addon.json",
-    "addons/nano/build-provenance.json"
+    "addons/nano/build-provenance.json",
+    "addons/nano/README.txt"
   ],
   "generated_files": [
     "addons/nano/addon.json",
