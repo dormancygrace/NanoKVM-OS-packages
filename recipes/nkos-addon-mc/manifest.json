@@ -18,7 +18,8 @@
   "data": "/data/mc",
   "payload_files": [
     "addons/mc/addon.json",
-    "addons/mc/build-provenance.json"
+    "addons/mc/build-provenance.json",
+    "addons/mc/README.txt"
   ],
   "generated_files": [
     "addons/mc/addon.json",

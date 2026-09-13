@@ -18,7 +18,8 @@
   "data": "/data/htop",
   "payload_files": [
     "addons/htop/addon.json",
-    "addons/htop/build-provenance.json"
+    "addons/htop/build-provenance.json",
+    "addons/htop/README.txt"
   ],
   "generated_files": [
     "addons/htop/addon.json",

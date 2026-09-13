@@ -18,7 +18,8 @@
   "data": "/data/bluez5-utils",
   "payload_files": [
     "addons/bluez5-utils/addon.json",
-    "addons/bluez5-utils/build-provenance.json"
+    "addons/bluez5-utils/build-provenance.json",
+    "addons/bluez5-utils/README.txt"
   ],
   "generated_files": [
     "addons/bluez5-utils/addon.json",

@@ -18,7 +18,8 @@
   "data": "/data/tcpdump",
   "payload_files": [
     "addons/tcpdump/addon.json",
-    "addons/tcpdump/build-provenance.json"
+    "addons/tcpdump/build-provenance.json",
+    "addons/tcpdump/README.txt"
   ],
   "generated_files": [
     "addons/tcpdump/addon.json",

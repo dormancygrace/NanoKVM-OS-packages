@@ -18,7 +18,8 @@
   "data": "/data/ethtool",
   "payload_files": [
     "addons/ethtool/addon.json",
-    "addons/ethtool/build-provenance.json"
+    "addons/ethtool/build-provenance.json",
+    "addons/ethtool/README.txt"
   ],
   "generated_files": [
     "addons/ethtool/addon.json",
