@@ -195,7 +195,7 @@ set -- "$tmp/repository/riscv64/"*.apk
 index=$tmp/repository/riscv64/Packages.adb
 "$apk" --keys-dir "$verify_keys_dir" --sign-key "$sign_key" mkndx \
 	--output "$index" --description "NanoKVM OS packages $repository_commit" \
-	--pkgname-spec '${name}-${version}.apk' "$@"
+	--pkgname-spec '${arch}/${name}-${version}.apk' "$@"
 "$apk" --keys-dir "$verify_keys_dir" verify "$index"
 
 python3 - "$tmp/repository" "$repo" "$base_abi" "$repository_commit" "$previous" <<'PY'

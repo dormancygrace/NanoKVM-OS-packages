@@ -42,27 +42,70 @@ chmod 0755 "$tmp/payload/addons/demo/bin/demo"
 "$apk" --keys-dir "$tmp/keys" verify "$tmp/repository/riscv64/nkos-addon-demo-1.0.0-r0.apk"
 "$apk" --keys-dir "$tmp/keys" --sign-key "$tmp/signing.pem" mkndx \
 	--output "$tmp/repository/riscv64/Packages.adb" \
-	--pkgname-spec '${name}-${version}.apk' \
+	--pkgname-spec '${arch}/${name}-${version}.apk' \
 	"$tmp/repository/riscv64/nkos-addon-demo-1.0.0-r0.apk"
 "$apk" --keys-dir "$tmp/keys" verify "$tmp/repository/riscv64/Packages.adb"
 
-# Extracting a standalone package exercises the real APKv3 archive parser
-# without depending on an installed database.
-mkdir -p "$tmp/extracted"
-"$apk" --keys-dir "$tmp/keys" extract --destination "$tmp/extracted" --no-chown \
-	"$tmp/repository/riscv64/nkos-addon-demo-1.0.0-r0.apk"
-python3 - "$tmp/extracted" <<'PY'
+# Exercise the published v3 layout over HTTP. A local-file install would not
+# detect a pkgname-spec that omits the architecture directory.
+cat > "$tmp/http-server.py" <<'PY'
+import http.server
+import pathlib
+import sys
+
+root = sys.argv[1]
+port_file = pathlib.Path(sys.argv[2])
+handler = lambda *args, **kwargs: http.server.SimpleHTTPRequestHandler(
+    *args, directory=root, **kwargs
+)
+server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler)
+port_file.write_text(str(server.server_port), encoding="ascii")
+server.serve_forever()
+PY
+python3 "$tmp/http-server.py" "$tmp/repository" "$tmp/http-port" \
+	>"$tmp/http-server.log" 2>&1 &
+http_server_pid=$!
+trap 'kill "$http_server_pid" 2>/dev/null || true; wait "$http_server_pid" 2>/dev/null || true; rm -rf "$tmp"' EXIT HUP INT TERM
+attempt=0
+while [ ! -s "$tmp/http-port" ]; do
+	attempt=$((attempt + 1))
+	[ "$attempt" -lt 100 ] || { echo 'host-self-test: HTTP server did not start' >&2; exit 1; }
+	sleep 0.05
+done
+http_root="$tmp/http-root"
+mkdir -p "$http_root/etc/apk/keys"
+printf '%s\n' riscv64 > "$http_root/etc/apk/arch"
+printf 'v3 http://127.0.0.1:%s\n' "$(cat "$tmp/http-port")" > "$http_root/etc/apk/repositories"
+cp "$tmp/keys/nkos-selftest-rsa4096.pem" "$http_root/etc/apk/keys/"
+if [ "$(id -u)" -eq 0 ]; then
+	http_user_mode=
+else
+	http_user_mode=--usermode
+fi
+for provider in nkos-base-abi=1.0.0 nkos-server-api=1 nkos-feature-shell=1 nkos-feature-static-riscv64=1; do
+	"$apk" --root "$http_root" --root-tmpfs=no --no-network $http_user_mode add \
+		--initdb --no-scripts --virtual "$provider"
+done
+"$apk" --root "$http_root" --root-tmpfs=no $http_user_mode update
+"$apk" --root "$http_root" --root-tmpfs=no $http_user_mode add \
+	--no-scripts nkos-addon-demo=1.0.0-r0
+"$apk" --root "$http_root" --root-tmpfs=no --no-network info --installed nkos-addon-demo
+[ -x "$http_root/addons/demo/bin/demo" ]
+
+# Inspect the installed addon subtree after the native HTTP transaction. This
+# exercises APKv3's archive extraction while preserving implicit directories.
+python3 - "$http_root/addons" <<'PY'
 import pathlib
 import sys
 
 root = pathlib.Path(sys.argv[1])
 for path in root.rglob("*"):
     relative = path.relative_to(root).as_posix()
-    allowed = relative in ("addons", "addons/demo") or relative.startswith("addons/demo/")
+    allowed = relative == "demo" or relative.startswith("demo/")
     if path.is_symlink() or not allowed:
-        raise SystemExit(f"host-self-test: extracted path escaped addon namespace: {relative}")
-if not (root / "addons/demo/bin/demo").is_file():
-    raise SystemExit("host-self-test: fixture executable was not extracted")
+        raise SystemExit(f"host-self-test: installed path escaped addon namespace: {relative}")
+if not (root / "demo/bin/demo").is_file():
+    raise SystemExit("host-self-test: fixture executable was not installed")
 PY
 
 # Build the image-only ABI records through native apk add --virtual.  No
