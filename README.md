@@ -123,3 +123,27 @@ its tools use that bus automatically. Bond keys and configuration stay in
 `/etc/kvm/bluez5-utils`, with Unix permissions on the root filesystem. No Bluetooth
 adapter is required to install the utilities. A real Bluetooth connection still
 requires compatible hardware.
+
+## Optional Python
+
+Install `nkos-addon-python` through the image's addon manager:
+
+```sh
+nkos-addons install python
+. /etc/profile
+python --version
+pip --version
+```
+
+The `python` and `python3` commands run the same CPython 3.14.7 interpreter.
+Both `pip` and `pip3` invoke its bundled pip 26.2.1. Python stays outside the
+base image, with private OpenSSL 4.0.2, Expat, libffi and zlib libraries.
+Default pip installations persist in `/data/python`; add `/data/python/bin`
+to PATH when using console commands installed by pip. Removing the APK keeps
+this data. Virtual environments requiring symlinks need a POSIX filesystem;
+the normal `/data` filesystem is exFAT.
+
+Package CI uses the independent `NKOS_PYTHON_INPUT` export pinned in
+`versions.env`, preserving existing optional utility inputs and revisions.
+See [the Python build notes](recipes/nkos-addon-python/BUILD.md) for source
+archives, build configuration, the OpenSSL compatibility patch and export steps.

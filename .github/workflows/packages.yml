@@ -106,6 +106,14 @@ jobs:
           mkdir "$RUNNER_TEMP/optional-input"
           tar -xzf "$RUNNER_TEMP/optional-input.tar.gz" -C "$RUNNER_TEMP/optional-input"
           printf 'NKOS_OPTIONAL_INPUT=%s\n' "$RUNNER_TEMP/optional-input" >> "$GITHUB_ENV"
+      - name: Fetch pinned optional Python input
+        run: |
+          . ./versions.env
+          curl --fail --location --retry 3 "$PYTHON_INPUT_URL" --output "$RUNNER_TEMP/python-input.tar.gz"
+          printf '%s  %s\n' "$PYTHON_INPUT_SHA256" "$RUNNER_TEMP/python-input.tar.gz" | sha256sum --check
+          mkdir "$RUNNER_TEMP/python-input"
+          tar -xzf "$RUNNER_TEMP/python-input.tar.gz" -C "$RUNNER_TEMP/python-input"
+          printf 'NKOS_PYTHON_INPUT=%s\n' "$RUNNER_TEMP/python-input" >> "$GITHUB_ENV"
       - name: Build unsigned addon payload staging
         env:
           REPOSITORY_COMMIT: ${{ github.sha }}

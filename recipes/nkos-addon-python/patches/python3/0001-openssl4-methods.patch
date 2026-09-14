@@ -1,0 +1,33 @@
+From: NanoKVM OS <nanokvm@example.invalid>
+Subject: [PATCH] _ssl: do not reference removed OpenSSL 4 version methods
+
+OpenSSL 4 no longer exports SSLv3_method, TLSv1_method,
+TLSv1_1_method, or TLSv1_2_method. Its headers do not currently define
+all of the corresponding feature macros, so CPython emits unresolved
+references or fails while compiling the target _ssl module.
+
+The generic TLS, TLS client, and TLS server methods remain available.
+Disable only the removed, already deprecated fixed-version protocols.
+
+Upstream: Not submitted
+---
+ Modules/_ssl.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/Modules/_ssl.c b/Modules/_ssl.c
+--- a/Modules/_ssl.c
++++ b/Modules/_ssl.c
+@@ -73,6 +73,13 @@
+ #include "openssl/bio.h"
+ #include "openssl/dh.h"
+ 
++#if OPENSSL_VERSION_MAJOR >= 4
++#  define OPENSSL_NO_SSL3 1
++#  define OPENSSL_NO_TLS1_METHOD 1
++#  define OPENSSL_NO_TLS1_1_METHOD 1
++#  define OPENSSL_NO_TLS1_2_METHOD 1
++#endif
++
+ #ifndef OPENSSL_THREADS
+ #  error "OPENSSL_THREADS is not defined, Python requires thread-safe OpenSSL"
+ #endif
