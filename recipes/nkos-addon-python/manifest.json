@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "id": "python",
+  "package": "nkos-addon-python",
+  "source_version": "3.14.7",
+  "pkgver": "3.14.7",
+  "pkgrel": 1,
+  "arch": "riscv64",
+  "description": "Python 3 with pip, SSL and zlib",
+  "license": "Python-2.0, MIT, Apache-2.0, Zlib",
+  "base_abi_provider": "nkos-base-abi",
+  "server_api": "nkos-server-api=1",
+  "features": ["nkos-feature-shell=1", "nkos-feature-private-libs-riscv64=1"],
+  "config": "/etc/kvm/python",
+  "data": "/data/python",
+  "payload_files": ["addons/python/addon.json", "addons/python/build-provenance.json", "addons/python/README.txt", "addons/python/bin/python", "addons/python/bin/python3", "addons/python/bin/pip", "addons/python/bin/pip3"],
+  "generated_files": ["addons/python/addon.json", "addons/python/build-provenance.json"],
+  "services": [],
+  "preserve": ["config", "data"]
+}

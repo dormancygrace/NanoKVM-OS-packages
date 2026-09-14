@@ -1,0 +1,4 @@
+#!/bin/sh
+root=/opt/nkos/addons/python
+export PYTHONUSERBASE="${PYTHONUSERBASE:-/data/python}"
+exec "$root/usr/bin/python3.14" "$@"
