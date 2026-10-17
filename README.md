@@ -1,3 +1,10 @@
+> **Archived.** This repository is no longer maintained. It held optional
+> packages for the Buildroot-based NanoKVM OS and the RustDesk add-on releases
+> 0.5.3-r0 to r5, which stay downloadable here with their sources. NanoKVM OS
+> packages, including the RustDesk add-on, are now built and released in
+> [NanoKVM-OS](https://github.com/dormancygrace/NanoKVM-OS) and served from its
+> [APK repository](https://dormancygrace.github.io/NanoKVM-OS/).
+
 # NanoKVM OS packages
 
 This repository is the canonical source for optional NanoKVM OS packages. It
